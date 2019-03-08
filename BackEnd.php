@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', 'On');
-error_reporting(E_ALL);
+/*ini_set('display_errors', 'On');
+error_reporting(E_ALL);*/
 $request = 'default';
 if (isset($_POST['request_type'])) {
     $request = $_POST['request_type'];
@@ -11,7 +11,6 @@ if (isset($_POST['request_type'])) {
 
 $json = 'default';
 $json_obj = 'default';
-$examJSON = file_get_contents('exam.json');
 
 if (isset($_POST['data'])) {
     $json = $_POST['data'];
@@ -23,7 +22,6 @@ $username = "mg427";
 $password = base64_decode("NWNpWU1VNlhm");
 $dbname = "mg427";
 $conn = new mysqli($servername, $username, $password, $dbname);
-
 switch ($request) {
     case 'login':
         login($json_obj, $conn);
@@ -59,10 +57,10 @@ switch ($request) {
         modify_grade($json_obj, $conn);
         break;
     case 'default':
-        echo '<br>This should never happen<br>';
+        echo 'This should never happen';
         break;
     default:
-        echo '<br>Invalid request: ' . $request . '<br>';
+        echo 'Invalid request: ' . $request;
         break;
 }
 $conn->close();
@@ -70,6 +68,8 @@ $conn->close();
 //REQUEST METHODS
 function login($json_obj, $conn)
 {
+
+
     $username = $json_obj['username'];
     $password = $json_obj['password'];
 
@@ -94,6 +94,7 @@ function login($json_obj, $conn)
 
 function to_list($str)
 {
+
     $comma_index = strpos($str, ',');
     $arg1 = substr($str, 0, $comma_index);
     $arg2 = substr($str, $comma_index + 2);
@@ -107,6 +108,11 @@ function to_str($arr)
 
 function new_question($json_obj, $conn)
 {
+
+    $json_obj = $json_obj["questions"];
+    $key = array_keys($json_obj)[0];
+    $json_obj = $json_obj[$key];
+
     $name = $json_obj['func_name'];
     $arg_names = to_str($json_obj['arg_names']);
     $desc = $json_obj['description'];
@@ -129,7 +135,7 @@ function new_question($json_obj, $conn)
     //Creating the inputs and outputs
     for ($i = 0; $i < count($inputs); $i++) {
         $sql = "INSERT INTO PUTS (QID, Output, Input)
-		VALUES ('" . $name . "', '" . $outputs[$i] . "', '" . $inputs[$i] . "');";
+		VALUES ('" . $name . "', '" . $outputs[$i] . "', '" . to_str($inputs[$i]) . "');";
         if ($conn->query($sql) === FALSE) {
             $result = "fail";
         }
@@ -143,6 +149,7 @@ function new_question($json_obj, $conn)
             $result = "fail";
         }
     }
+
     echo $result;
 }
 
@@ -189,6 +196,7 @@ function query_question($json_obj, $conn)
     $sql = "SELECT * FROM QUESTIONS WHERE
 			Difficulty = \"" . $difficulty . "\" AND ";
 
+
     for ($i = 0; $i < count($keywords); $i++) {
         $sql .= "Description LIKE \"%" . $keywords[$i] . "%\" AND ";
     }
@@ -213,7 +221,7 @@ function query_question($json_obj, $conn)
             $myObj["func_name"] = $QID;
             $myObj["description"] = $row['Description'];
             $myObj["difficulty"] = $row['Difficulty'];
-            $myObj["arg_names"] = to_list($myObj['Arguments']);
+            $myObj["arg_names"] = to_list($row['Arguments']);
 
             //Time for the hard stuff
             //inputs+outputs
@@ -224,7 +232,7 @@ function query_question($json_obj, $conn)
             $inputs = array();
             $outputs = array();
             while ($put = $puts->fetch_assoc()) {
-                array_push($inputs, $put['Input']);
+                array_push($inputs, to_list($put['Input']));
                 array_push($outputs, $put['Output']);
             }
 
@@ -238,7 +246,7 @@ function query_question($json_obj, $conn)
                 array_push($topics, $topic['Topic']);
             }
 
-            array_push($questions, $myObj);
+            $questions[$row["Name"]] = $myObj;
         }
         $finalObj = array();
         $finalObj["questions"] = $questions;
@@ -302,7 +310,7 @@ function release($json_obj, $conn)
                     $inputs = array();
                     $outputs = array();
                     while ($put = $puts->fetch_assoc()) {
-                        array_push($inputs, $put['Input']);
+                        array_push($inputs, to_list($put['Input']));
                         array_push($outputs, $put['Output']);
                     }
 
@@ -386,7 +394,7 @@ function review_grade($json_obj, $conn)
                     $inputs = array();
                     $outputs = array();
                     while ($put = $puts->fetch_assoc()) {
-                        array_push($inputs, $put['Input']);
+                        array_push($inputs, to_list(['Input']));
                         array_push($outputs, $put['Output']);
                     }
 
@@ -444,7 +452,7 @@ function take_exam($json_obj, $conn)
                 $inputs = array();
                 $outputs = array();
                 while ($put = $puts->fetch_assoc()) {
-                    array_push($inputs, $put['Input']);
+                    array_push($inputs, to_list(['Input']));
                     array_push($outputs, $put['Output']);
                 }
 
