@@ -19,7 +19,7 @@ if (isset($_POST['data'])) {
 
 $servername = "sql.njit.edu";
 $username = "mg427";
-$password = base64_decode("NWNpWU1VNlhm");
+$password = "REDACTED";
 $dbname = "mg427";
 $conn = new mysqli($servername, $username, $password, $dbname);
 switch ($request) {
